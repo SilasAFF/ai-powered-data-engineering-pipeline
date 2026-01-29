@@ -1,4 +1,4 @@
-##AI-Powered Data Engineering Pipeline
+#AI-Powered Data Engineering Pipeline
 
 # Project Overview
 
