@@ -12,7 +12,7 @@ def transform_products():
 
     raw_base_path = Path("data/raw/products")
 
-    # Find latest (most recent) path partition and reads the file products.json
+    # Find latest (most recent) path partition directory
     partitions = [p for p in raw_base_path.iterdir() if p.is_dir()]
     latest_partition = max(partitions)
 
@@ -32,7 +32,13 @@ def transform_products():
     rating_df.columns = ["rating_score", "rating_count"]
 
     # Remove nested column "rating" and add new columns "rating_score", "rating_count"
-    df = pd.concat([df.drop(columns=["rating"]), rating_df], axis=1)
+    df = pd.concat(
+        [
+            df.drop(columns=["rating"]), 
+            rating_df
+        ], 
+        axis=1
+    )
 
     # Rename columns
     df = df.rename(columns={"id": "product_id"})
