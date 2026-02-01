@@ -32,6 +32,7 @@ This project addresses these challenges using a modern and scalable data archite
 
 
 Solution Architecture
+
         ┌────────────────────┐
         │    Data Sources    │
         │                    │
@@ -98,40 +99,34 @@ AI & Analytics:
 
 # Project Structure
 
+```text
 ai-powered-data-engineering-pipeline/
 │
 ├── data/
-│   ├── raw/                # Raw ingestion layer
-│   ├── processed/          # Cleaned and transformed data
-│   └── curated/            # Analytics-ready data
-│
+│   ├── raw/
+│   ├── processed/
+│   └── curated/
 ├── etl/
 │   ├── extract/
 │   ├── transform/
 │   └── load/
-│
-├── dags/                   # Apache Airflow DAGs
-│
+├── dags/                   # Airflow DAGs
 ├── warehouse/
 │   ├── schema.sql
 │   └── tables.sql
-│
 ├── analytics/
 │   ├── kpis.sql
 │   └── business_queries.sql
-│
 ├── ai/
 │   ├── insight_generator.py
 │   └── prompt_templates/
-│
 ├── dashboards/
-│
 ├── docker/
-│
 ├── docker-compose.yml
 ├── requirements.txt
 ├── .env.example
 └── README.md
+```
 
 
 # Data Model
@@ -192,10 +187,6 @@ Future Improvements:
 - CI/CD pipeline with GitHub Actions
 - Cloud deployment (AWS or GCP)
 - Interactive dashboard (Streamlit or Power BI)
-
-
-Author:
-This project was developed for educational and portfolio purposes, focusing on real-world data engineering practices and modern analytics architecture.
 
 Notes:
 This repository is intended to demonstrate professional-level Data Engineering skills, including pipeline design, data modeling, orchestration, and AI integration.
