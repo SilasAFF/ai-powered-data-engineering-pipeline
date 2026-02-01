@@ -7,6 +7,8 @@ def transform_users():
     """
     Transforms raw users data into a clean dim_users dataset.
     """
+    print("Users transformation script initialized.")
+
     processed_path = Path("data/processed")
     processed_path.mkdir(parents=True, exist_ok=True)
 
@@ -61,9 +63,7 @@ def transform_users():
     output_path = processed_path / "dim_users.csv"
     df.to_csv(output_path, index=False)
 
-
-    print("Users transformation script initialized.")
-
+    print(f"dim_users saved at {output_path}")
 
 if __name__ == "__main__":
     transform_users()
