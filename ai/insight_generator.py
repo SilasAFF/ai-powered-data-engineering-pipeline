@@ -1,11 +1,18 @@
-from llm_client import generate_executive_insights
 import json
 from pathlib import Path
+
 import pandas as pd
+
 from kpi_extractor import fetch_kpi_summary
+from llm_client import generate_executive_insights
+from llm_client_local import generate_executive_insights_local
 
 
 def generate_insights(df: pd.DataFrame) -> dict:
+    """
+    Generates structured, rule-based KPI insights.
+    This is the single source of truth for business logic.
+    """
     df = df.sort_values("month")
 
     first = df.iloc[0]
@@ -29,14 +36,10 @@ def generate_insights(df: pd.DataFrame) -> dict:
 
     if aov_change_pct < -50:
         alerts.append("Sharp AOV decrease (>50%) detected")
-        insights.append(
-            "Significant drop in average order value"
-        )
+        insights.append("Significant drop in average order value")
 
     if revenue_change_pct < 0 and orders_change_pct > 0:
-        insights.append(
-            "Revenue decline driven primarily by lower ticket size"
-        )
+        insights.append("Revenue decline driven primarily by lower ticket size")
 
     if not insights:
         insights.append("Stable performance with no critical anomalies detected")
@@ -53,7 +56,39 @@ def generate_insights(df: pd.DataFrame) -> dict:
     }
 
 
+def structured_insights_to_text(insights: dict) -> str:
+    """
+    Converts structured KPI insights into a human-readable executive summary.
+    Used as the final deterministic fallback when no LLM is available.
+    """
+    lines = []
+
+    lines.append(f"Performance period: {insights['period']}.")
+
+    metrics = insights["metrics"]
+    lines.append(
+        f"Revenue changed by {metrics['revenue_change_pct']}%, "
+        f"average order value by {metrics['aov_change_pct']}%, "
+        f"and order volume by {metrics['orders_change_pct']}%."
+    )
+
+    if insights["insights"]:
+        lines.append("Key insights:")
+        for item in insights["insights"]:
+            lines.append(f"- {item}")
+
+    if insights["alerts"]:
+        lines.append("Alerts:")
+        for alert in insights["alerts"]:
+            lines.append(f"- {alert}")
+
+    return "\n".join(lines)
+
+
 def save_insights(payload: dict):
+    """
+    Persists structured insights to disk (machine-readable output).
+    """
     output_dir = Path("ai/outputs")
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -63,82 +98,59 @@ def save_insights(payload: dict):
 
     print(f"Insights saved at {output_path}")
 
-def generate_llm_insights(kpi_df: pd.DataFrame) -> str:
+
+def dataframe_to_llm_payload(df: pd.DataFrame) -> dict:
     """
-    Generates executive insights using a Large Language Model.
+    Converts DataFrame to a JSON-safe payload for LLMs.
     """
-    payload = {
-        "periods": kpi_df.to_dict(orient="records")
+    df_copy = df.copy()
+
+    if "month" in df_copy.columns:
+        df_copy["month"] = df_copy["month"].astype(str)
+
+    return {
+        "periods": df_copy.to_dict(orient="records")
     }
 
+
+def generate_llm_insights(payload: dict) -> str:
+    """
+    Generates executive insights using a cloud-based LLM.
+    """
     return generate_executive_insights(payload)
-
-def generate_narrative_fallback(df: pd.DataFrame) -> str:
-    """
-    Generates an executive narrative based on KPI trends without using LLMs.
-    """
-    df = df.sort_values("month")
-
-    first = df.iloc[0]
-    last = df.iloc[-1]
-
-    revenue_delta = last["total_revenue"] - first["total_revenue"]
-    revenue_pct = (revenue_delta / first["total_revenue"]) * 100
-
-    aov_delta = last["average_order_value"] - first["average_order_value"]
-    aov_pct = (aov_delta / first["average_order_value"]) * 100
-
-    orders_delta = last["total_orders"] - first["total_orders"]
-    orders_pct = (orders_delta / first["total_orders"]) * 100
-
-    narrative = []
-
-    narrative.append(
-        f"Between {first['month']} and {last['month']}, total revenue "
-        f"{'increased' if revenue_pct >= 0 else 'decreased'} by "
-        f"{abs(revenue_pct):.1f}%."
-    )
-
-    narrative.append(
-        f"Order volume {'grew' if orders_pct >= 0 else 'declined'} by "
-        f"{abs(orders_pct):.1f}%, while average order value "
-        f"{'rose' if aov_pct >= 0 else 'fell'} by "
-        f"{abs(aov_pct):.1f}%."
-    )
-
-    if revenue_pct < 0 and orders_pct > 0:
-        narrative.append(
-            "This indicates that revenue pressure is primarily driven by "
-            "a reduction in average ticket size rather than demand."
-        )
-
-    if revenue_pct > 0 and orders_pct > 0:
-        narrative.append(
-            "Overall performance shows healthy growth supported by both "
-            "volume and revenue expansion."
-        )
-
-    return "\n".join(narrative)
 
 
 if __name__ == "__main__":
     df = fetch_kpi_summary()
 
-    # Rule-based insights
+    # 1. Deterministic, rule-based insights (source of truth)
     structured_insights = generate_insights(df)
     save_insights(structured_insights)
 
-    # LLM-based insights
-    executive_text = generate_llm_insights(df)
-    
-    # If LLM fails, generate deterministic narrative
-    if "temporarily unavailable" in executive_text.lower():
-        executive_text = generate_narrative_fallback(df)
-    
+    # Prepare JSON-safe payload once
+    llm_payload = dataframe_to_llm_payload(df)
+
+    # 2. Executive summary generation (LLM with fallbacks)
+    try:
+        # Cloud LLM (OpenAI)
+        executive_text = generate_llm_insights(llm_payload)
+
+    except Exception as openai_error:
+        print("⚠️ OpenAI failed:", repr(openai_error))
+
+        try:
+            # Local LLM (Ollama)
+            executive_text = generate_executive_insights_local(llm_payload)
+
+        except Exception as ollama_error:
+            print("❌ Ollama failed:", repr(ollama_error))
+
+            # Final deterministic fallback
+            executive_text = structured_insights_to_text(structured_insights)
+
+    # 3. Persist executive summary
     output_path = Path("ai/outputs/executive_summary.txt")
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(executive_text)
-    
+
     print(f"Executive summary saved at {output_path}")
-
-
