@@ -1,24 +1,26 @@
-from openai import RateLimitError, OpenAIError
 import os
-from pathlib import Path
 from dotenv import load_dotenv
-from openai import OpenAI
+from openai import OpenAI, OpenAIError, RateLimitError
 
 load_dotenv()
 
-PROMPT_PATH = Path("ai/prompts/executive_insights.txt")
 
-client = OpenAI(
-    api_key=os.getenv("OPENAI_API_KEY")
-)
+def get_openai_client():
+    api_key = os.getenv("OPENAI_API_KEY")
 
+    if not api_key:
+        raise ValueError("OPENAI_API_KEY is not set.")
 
-def load_system_prompt() -> str:
-    with open(PROMPT_PATH, "r", encoding="utf-8") as f:
-        return f.read()
+    return OpenAI(api_key=api_key)
 
 
 def generate_executive_insights(payload: dict) -> str:
+    """
+    Generates executive insights using OpenAI.
+    Client is instantiated lazily to avoid DAG import failures.
+    """
+    client = get_openai_client()
+
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
@@ -34,4 +36,3 @@ def generate_executive_insights(payload: dict) -> str:
     )
 
     return response.choices[0].message.content
-

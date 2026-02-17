@@ -3,9 +3,9 @@ from pathlib import Path
 
 import pandas as pd
 
-from kpi_extractor import fetch_kpi_summary
-from llm_client import generate_executive_insights
-from llm_client_local import generate_executive_insights_local
+from ai.kpi_extractor import fetch_kpi_summary
+from ai.llm_client import generate_executive_insights
+from ai.llm_client_local import generate_executive_insights_local
 
 
 def generate_insights(df: pd.DataFrame) -> dict:
