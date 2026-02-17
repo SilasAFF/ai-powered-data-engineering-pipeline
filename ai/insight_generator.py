@@ -154,3 +154,27 @@ if __name__ == "__main__":
         f.write(executive_text)
 
     print(f"Executive summary saved at {output_path}")
+
+
+
+def main():
+    df = fetch_kpi_summary()
+
+    structured_insights = generate_insights(df)
+    save_insights(structured_insights)
+
+    llm_payload = dataframe_to_llm_payload(df)
+
+    try:
+        executive_text = generate_llm_insights(llm_payload)
+    except Exception:
+        try:
+            executive_text = generate_executive_insights_local(llm_payload)
+        except Exception:
+            executive_text = structured_insights_to_text(structured_insights)
+
+    output_path = Path("ai/outputs/executive_summary.txt")
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(executive_text)
+
+    print("Executive summary generated successfully.")
