@@ -3,3 +3,6 @@ __pycache__/
 *.pyc
 venv/
 .vscode/
+data/raw
+data/processed
+ai/outputs
