@@ -1,3 +1,11 @@
-requests
-python-dotenv
-openai
+# --- Core Data Engineering ---
+pandas==2.1.4
+SQLAlchemy==1.4.52
+psycopg2-binary==2.9.9
+
+# --- AI & Analytics ---
+openai==2.21.0
+python-dotenv==1.0.1
+
+# --- Extraction & Utilities ---
+requests==2.31.0
