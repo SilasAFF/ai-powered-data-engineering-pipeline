@@ -5,9 +5,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Aqui está o segredo: 
-# Se estiver no Docker, usaremos http://host.docker.internal:11434
-# Se estiver no VS Code e não houver essa env, ele usa o localhost por padrão.
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 OLLAMA_URL = f"{OLLAMA_BASE_URL}/api/generate"
 MODEL_NAME = "llama3:latest"
@@ -34,11 +31,11 @@ KPI Data:
                 "prompt": prompt,
                 "stream": False,
             },
-            timeout=120, # Aumentei um pouco o timeout porque o Llama 3 local pode demorar via Docker
+            timeout=120,
         )
 
         response.raise_for_status()
         return response.json()["response"]
         
     except requests.exceptions.ConnectionError:
-        raise Exception(f"Não foi possível conectar ao Ollama em {OLLAMA_URL}. Verifique se o Ollama está rodando e se a env OLLAMA_HOST está como 0.0.0.0 no Windows.")
+        raise Exception(f"Not possible to connect to Ollama at {OLLAMA_URL}. Verify that Ollama is running and that the OLLAMA_HOST environment variable is set to 0.0.0.0 on Windows.")

@@ -35,4 +35,7 @@ def generate_executive_insights(payload: dict) -> str:
         ],
     )
 
-    return response.choices[0].message.content
+    content = response.choices[0].message.content
+    if content is None:
+        raise ValueError("OpenAI returned empty response content")
+    return content
